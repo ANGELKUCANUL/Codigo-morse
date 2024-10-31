@@ -1,0 +1,55 @@
+#include <Adafruit_LiquidCrystal.h>
+
+String codigoMorse = "";
+String mensaje = "";
+
+// Mapa de caracteres Morse a letras
+String letrasMorse[] = {".-", "-...", "-.-.", "-..", ".", "..-.", "--.", "....", "..", ".---", "-.-", ".-..", "--", "-.", "---", ".--.", "--.-", ".-.", "...", "-", "..-", "...-", ".--", "-..-", "-.--", "--.."};
+char letras[] = {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'};
+
+// Inicializa la pantalla LCD en el bus I2C
+Adafruit_LiquidCrystal lcd_1(0);
+
+void setup() {
+  lcd_1.begin(16, 2); // Inicializa la pantalla LCD con 16 columnas y 2 filas
+  Serial.begin(9600);
+  lcd_1.print("Codigo morse"); // Mensaje inicial en la pantalla LCD
+}
+
+void loop() {
+  if (Serial.available() > 0) {
+    char caracterRecibido = Serial.read();
+
+    if (caracterRecibido == ' ') {
+      // Convierte el código Morse a letra y la añade al mensaje
+      if (codigoMorse.length() > 0) {
+        mensaje += morseALetra(codigoMorse);
+        Serial.print(morseALetra(codigoMorse)); // Muestra la letra en el serial
+        codigoMorse = "";
+      }
+    } else if (caracterRecibido == '/') {
+      // Nueva palabra
+      mensaje += " ";
+      Serial.print(" "); // Muestra un espacio en el serial
+    } else if (caracterRecibido == '\n') {
+      // Fin de la entrada, muestra el mensaje en la LCD
+      Serial.println(mensaje); // Muestra el mensaje completo en el serial
+      mensaje = "";
+    } else {
+      codigoMorse += caracterRecibido;
+    }
+
+    // Actualiza la pantalla LCD
+    lcd_1.clear();
+    lcd_1.print(mensaje);
+  }
+}
+
+char morseALetra(String codigo) {
+  for (int i = 0; i < 26; i++) {
+    if (codigo == letrasMorse[i]) {
+      return letras[i];
+    }
+  }
+  return '?';  // Retorna '?' si el código Morse no se reconoce
+}
