@@ -1,0 +1,189 @@
+#define PIN_BUZZER 7
+#define PIN_LED_1 8
+#define PIN_LED_2 9
+#define PIN_LED_3 10
+
+#define REPOUSE_TIME    400
+#define FAST_PULSE_TIME 500
+#define SLOW_PULSE_TIME 1000
+#define WAITING_TIME    1000
+#define SPACE_DELAY     1500
+
+#define DEBUG
+
+#define HAS_BUZZER
+
+char text[50] = ""; 
+String morse = "";  
+
+void setup()
+{
+    Serial.begin (9600);
+
+    pinMode (PIN_LED_1, OUTPUT);
+    pinMode (PIN_LED_2, OUTPUT);
+    pinMode (PIN_LED_3, OUTPUT);
+    pinMode (PIN_BUZZER, OUTPUT);
+
+    digitalWrite (PIN_LED_1, LOW);
+    digitalWrite (PIN_LED_2, LOW);
+    digitalWrite (PIN_LED_3, LOW);
+    digitalWrite (PIN_BUZZER, LOW);
+}
+
+void loop()
+{
+    if (Serial.available() > 0)               
+    {
+        read_text();
+
+        #ifdef DEBUG
+        Serial.println(text);                 
+        #endif
+
+        int tmp = 0;
+        while (text[tmp] != '\0')
+        {
+            char_to_morse(text[tmp]);         
+            tmp++;
+
+            #ifdef DEBUG
+            Serial.println(morse); 
+            #endif
+
+            int tmp0 = 0;
+            while (morse[tmp0] != '\0')       
+            {
+                if (morse[tmp0] == '.')
+                    pulse (FAST_PULSE_TIME);  
+
+                else if (morse[tmp0] == '-')
+                    pulse (SLOW_PULSE_TIME);  
+
+                else if (morse[tmp0] == ' ')
+                    delay (SPACE_DELAY);      
+
+                else
+                    Serial.println("No se puede traducir un caracter individual!");
+
+                tmp0++;
+            }
+            delay(WAITING_TIME);
+        }
+    }
+}
+
+void read_text()
+{
+    int tmp = 0;
+    char ch = ' ';
+
+    while (Serial.available() > 0)                                       
+    {
+        ch = Serial.read();                                              
+
+        #ifdef DEBUG
+        Serial.println((int) ch);
+        #endif
+
+        if (ch > 96) ch -= 32;                                           
+
+        if ((ch > 64 && ch < 91) || (ch > 47 && ch < 58) || ch == 32)  
+        {
+            text[tmp] = ch;
+            tmp++;
+
+            delay(1);                                                    
+        }
+        else                                                             
+            Serial.println("Estas usando un caracter inválido!");
+    }
+
+    text[tmp] = '\0';
+}
+
+void char_to_morse(char ch)
+{
+    #define SET_MORSE(CHAR, VALUE) \
+    case CHAR : \
+        morse = VALUE ; \
+        break;
+
+    switch (ch) 
+    {
+        SET_MORSE('A', ".-"   );
+        SET_MORSE('B', "-..." );
+        SET_MORSE('C', "-.-." );
+        SET_MORSE('D', "-.."  );
+        SET_MORSE('E', "."    );
+        SET_MORSE('F', "..-." );
+        SET_MORSE('G', "--."  );
+        SET_MORSE('H', "...." );
+        SET_MORSE('I', ".."   );
+        SET_MORSE('J', ".---" );
+        SET_MORSE('K', "-.-"  );
+        SET_MORSE('L', ".-.." );
+        SET_MORSE('M', "--"   );
+        SET_MORSE('N', "-."   );
+        SET_MORSE('O', "---"  );
+        SET_MORSE('P', ".--." );
+        SET_MORSE('Q', "--.-" );
+        SET_MORSE('R', ".-."  );
+        SET_MORSE('S', "..."  );
+        SET_MORSE('T', "-"    );
+        SET_MORSE('U', "..-"  );
+        SET_MORSE('V', "...-" );
+        SET_MORSE('W', ".--"  );
+        SET_MORSE('X', "-..-" );
+        SET_MORSE('Y', "-.--" );
+        SET_MORSE('Z', "--.." );
+
+        SET_MORSE('0', ".----");
+        SET_MORSE('1', "..---");
+        SET_MORSE('2', "...--");
+        SET_MORSE('3', "....-");
+        SET_MORSE('4', ".....");
+        SET_MORSE('5', "-....");
+        SET_MORSE('6', "--...");
+        SET_MORSE('7', "---..");
+        SET_MORSE('8', "----.");
+        SET_MORSE('9', "-----");
+
+        SET_MORSE(',', "..-.." );
+        SET_MORSE('.', ".-.-.-");
+        SET_MORSE('?', "..--..");
+        SET_MORSE(';', "-.-.-" );
+        SET_MORSE(':', "---...");
+        SET_MORSE('/', "-..-." );
+        SET_MORSE('+', ".-.-." );
+        SET_MORSE('-', "-....-");
+        SET_MORSE('=', "-...-" );
+
+        SET_MORSE(' ', " ");
+    }
+
+    #undef SET_MORSE
+}
+
+void pulse(unsigned long period)
+{
+    digitalWrite (PIN_LED_1, HIGH);
+    digitalWrite (PIN_LED_2, HIGH);
+    digitalWrite (PIN_LED_3, HIGH);
+
+    #ifdef HAS_BUZZER 
+    digitalWrite (PIN_BUZZER, HIGH);
+    #endif
+
+    delay (period);
+
+    digitalWrite (PIN_LED_1, LOW);
+    digitalWrite (PIN_LED_2, LOW);
+    digitalWrite (PIN_LED_3, LOW);
+
+    #ifdef HAS_BUZZER 
+    digitalWrite (PIN_BUZZER, LOW);
+    #endif
+
+    delay (REPOUSE_TIME);
+}
